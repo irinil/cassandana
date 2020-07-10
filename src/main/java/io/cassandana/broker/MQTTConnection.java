@@ -20,6 +20,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -468,5 +469,9 @@ final class MQTTConnection {
     @Override
     public String toString() {
         return "MQTTConnection{channel=" + channel + ", connected=" + connected + '}';
+    }
+    
+    InetSocketAddress remoteAddress() {
+        return (InetSocketAddress) channel.remoteAddress();
     }
 }

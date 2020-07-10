@@ -27,6 +27,7 @@ import static io.cassandana.logging.LoggingUtils.getInterceptorIds;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -41,6 +42,8 @@ public class Server {
     private volatile boolean initialized;
     private PostOffice dispatcher;
     private BrokerInterceptor interceptor;
+    private SessionRegistry sessions;
+
     
     private Silo silo;
 
@@ -124,7 +127,7 @@ public class Server {
         
         ISubscriptionsDirectory subscriptions = new CTrieSubscriptionDirectory();
         subscriptions.init(subscriptionsRepository);
-        SessionRegistry sessions = new SessionRegistry(subscriptions, queueRepository);
+        sessions = new SessionRegistry(subscriptions, queueRepository);
         dispatcher = new PostOffice(subscriptions, authorizatorPolicy, retainedRepository, sessions, interceptor, silo);
         final BrokerConfiguration brokerConfig = new BrokerConfiguration(config);
         MQTTConnectionFactory connectionFactory = new MQTTConnectionFactory(brokerConfig, authenticator, sessions,
@@ -248,5 +251,12 @@ public class Server {
         }
         LOG.info("Removing MQTT message interceptor. InterceptorId={}", interceptHandler.getID());
         interceptor.removeInterceptHandler(interceptHandler);
+    }
+    
+    /**
+     * Return a list of descriptors of connected clients.
+     * */
+    public Collection<ClientDescriptor> listConnectedClients() {
+        return sessions.listConnectedClients();
     }
 }
