@@ -18,9 +18,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
@@ -54,7 +51,6 @@ public class SessionRegistry {
         NONE, SEND_STORED_MESSAGES
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(SessionRegistry.class);
 
     private final ConcurrentMap<String, Session> pool = new ConcurrentHashMap<>();
     private final ISubscriptionsDirectory subscriptionsDirectory;
@@ -78,7 +74,6 @@ public class SessionRegistry {
             final boolean success = previous == null;
 
             if (success) {
-                LOG.trace("case 1, not existing session with CId {}", clientId);
             } else {
                 postConnectAction = bindToExistingSession(mqttConnection, msg, clientId, newSession);
                 isSessionAlreadyStored = true;
@@ -124,7 +119,6 @@ public class SessionRegistry {
             if (!published) {
                 throw new SessionCorruptedException("old session was already removed");
             }
-            LOG.trace("case 2, oldSession with same CId {} disconnected", clientId);
         } else if (!newIsClean && oldSession.disconnected()) {
             // case 3
             reactivateSubscriptions(oldSession);
@@ -147,10 +141,8 @@ public class SessionRegistry {
                 throw new SessionCorruptedException("old session was already removed");
             }
             postConnectAction = PostConnectAction.SEND_STORED_MESSAGES;
-            LOG.trace("case 3, oldSession with same CId {} disconnected", clientId);
         } else if (oldSession.connected()) {
             // case 4
-            LOG.trace("case 4, oldSession with same CId {} still connected, force to close", clientId);
             oldSession.closeImmediately();
             //remove(clientId);
             // publish new session
@@ -224,7 +216,6 @@ public class SessionRegistry {
     public void disconnect(String clientID) {
         final Session session = retrieve(clientID);
         if (session == null) {
-            LOG.debug("Some other thread already removed the session CId={}", clientID);
             return;
         }
         session.disconnect();

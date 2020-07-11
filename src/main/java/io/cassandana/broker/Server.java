@@ -18,10 +18,6 @@ import io.cassandana.interception.BrokerInterceptor;
 import io.cassandana.interception.InterceptHandler;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.cassandana.persistence.MemorySubscriptionsRepository;
-import io.cassandana.silo.Silo;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.cassandana.logging.LoggingUtils.getInterceptorIds;
 
@@ -35,7 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class Server {
 
-    private static final Logger LOG = LoggerFactory.getLogger(io.cassandana.broker.Server.class);
 
     private ScheduledExecutorService scheduler;
     private NewNettyAcceptor acceptor;
@@ -45,8 +40,6 @@ public class Server {
     private SessionRegistry sessions;
 
     
-    private Silo silo;
-
     public static void main(String[] args) throws Exception {
         final Server server = new Server();
         server.startServer();
@@ -71,7 +64,6 @@ public class Server {
      * @throws IOException in case of any IO Error.
      */
     public void startServer(Config config) throws IOException {
-        LOG.debug("Starting cassandana integration using IConfig instance");
         startServer(config, null);
     }
 
@@ -84,7 +76,6 @@ public class Server {
      * @throws IOException in case of any IO Error.
      */
     public void startServer(Config config, List<? extends InterceptHandler> handlers) throws IOException {
-        LOG.debug("Starting cassandana integration using IConfig instance and intercept handlers");
         startServer(config, handlers, null, null, null);
     }
 
@@ -94,7 +85,6 @@ public class Server {
         if (handlers == null) {
             handlers = Collections.emptyList();
         }
-        LOG.trace("Starting Cassandana Server. MQTT message interceptors={}", getInterceptorIds(handlers));
 
         scheduler = Executors.newScheduledThreadPool(1);
 
@@ -104,9 +94,7 @@ public class Server {
 //        }
         
         initInterceptors(config, handlers);
-        LOG.debug("Initialized MQTT protocol processor");
         if (sslCtxCreator == null) {
-            LOG.info("Using default SSL context creator");
             sslCtxCreator = new DefaultCassandanaSslContextCreator(config);
         }
         authenticator = initializeAuthenticator(authenticator, config);
@@ -118,17 +106,15 @@ public class Server {
         final IRetainedRepository retainedRepository;
         
         
-        LOG.trace("Configuring in-memory subscriptions store");
         subscriptionsRepository = new MemorySubscriptionsRepository();
         queueRepository = new MemoryQueueRepository();
         retainedRepository = new MemoryRetainedRepository();
 
-        silo = (config.siloEnabled)? Silo.getInstance(config) : null;
         
         ISubscriptionsDirectory subscriptions = new CTrieSubscriptionDirectory();
         subscriptions.init(subscriptionsRepository);
         sessions = new SessionRegistry(subscriptions, queueRepository);
-        dispatcher = new PostOffice(subscriptions, authorizatorPolicy, retainedRepository, sessions, interceptor, silo);
+        dispatcher = new PostOffice(subscriptions, authorizatorPolicy, retainedRepository, sessions, interceptor);
         final BrokerConfiguration brokerConfig = new BrokerConfiguration(config);
         MQTTConnectionFactory connectionFactory = new MQTTConnectionFactory(brokerConfig, authenticator, sessions,
                                                                             dispatcher);
@@ -138,17 +124,13 @@ public class Server {
         acceptor.initialize(mqttHandler, config, sslCtxCreator);
 
         final long startTime = System.currentTimeMillis() - start;
-        LOG.info("Cassandana integration has been started successfully in {} ms", startTime);
         initialized = true;
     }
     
     private IAuthorizatorPolicy initializeAuthorizatorPolicy(IAuthorizatorPolicy authorizatorPolicy, Config conf) {
 
-        LOG.debug("Configuring MQTT authorizator policy");
         if(conf.aclProvider == SecurityProvider.DENY)
         	return new DenyAllAuthorizatorPolicy();
-        else if(conf.aclProvider == SecurityProvider.DATABASE)
-        	return new DatabaseAuthorizator(conf);
         else if(conf.aclProvider == SecurityProvider.HTTP)
         	return new HttpAuthorizator(conf);
         else //if(conf.aclProvider == SecurityProvider.PERMIT)
@@ -158,22 +140,16 @@ public class Server {
 
     private IAuthenticator initializeAuthenticator(IAuthenticator authenticator, Config conf) {
 
-        LOG.debug("Configuring MQTT authenticator");
         if(conf.authProvider == SecurityProvider.DENY)
         	return new RejectAllAuthenticator();
-        else if(conf.authProvider == SecurityProvider.DATABASE)
-        	return new DatabaseAuthenticator(conf);
         else if(conf.authProvider == SecurityProvider.HTTP)
         	return new HttpAuthenticator(conf);
-        else if(conf.authProvider == SecurityProvider.REDIS)
-        	return new RedisAuthenticator(conf);
         else //if(conf.aclProvider == SecurityProvider.PERMIT)
         	return new AcceptAllAuthenticator();
         
     }
 
     private void initInterceptors(Config conf, List<? extends InterceptHandler> embeddedObservers) {
-        LOG.info("Configuring message interceptors...");
 
         List<InterceptHandler> observers = new ArrayList<>(embeddedObservers);
         /*String interceptorClassName = props.getProperty(BrokerConstants.INTERCEPT_HANDLER_PROPERTY_NAME);
@@ -199,28 +175,20 @@ public class Server {
     public void internalPublish(MqttPublishMessage msg, final String clientId) {
         final int messageID = msg.variableHeader().packetId();
         if (!initialized) {
-            LOG.error("Moquette is not started, internal message cannot be published. CId: {}, messageId: {}", clientId,
-                      messageID);
             throw new IllegalStateException("Can't publish on a integration is not yet started");
         }
-        LOG.trace("Internal publishing message CId: {}, messageId: {}", clientId, messageID);
         dispatcher.internalPublish(msg);
     }
 
     public void stopServer() {
-        LOG.info("Unbinding integration from the configured ports");
         acceptor.close();
-        LOG.trace("Stopping MQTT protocol processor");
         initialized = false;
 
         // calling shutdown() does not actually stop tasks that are not cancelled,
         // and SessionsRepository does not stop its tasks. Thus shutdownNow().
         scheduler.shutdownNow();
         
-        if(silo != null)
-        	silo.shutdown();
 
-        LOG.info("Moquette integration has been stopped.");
     }
 
     /**
@@ -230,11 +198,8 @@ public class Server {
      */
     public void addInterceptHandler(InterceptHandler interceptHandler) {
         if (!initialized) {
-            LOG.error("Moquette is not started, MQTT message interceptor cannot be added. InterceptorId={}",
-                interceptHandler.getID());
             throw new IllegalStateException("Can't register interceptors on a integration that is not yet started");
         }
-        LOG.info("Adding MQTT message interceptor. InterceptorId={}", interceptHandler.getID());
         interceptor.addInterceptHandler(interceptHandler);
     }
 
@@ -245,11 +210,8 @@ public class Server {
      */
     public void removeInterceptHandler(InterceptHandler interceptHandler) {
         if (!initialized) {
-            LOG.error("Moquette is not started, MQTT message interceptor cannot be removed. InterceptorId={}",
-                interceptHandler.getID());
             throw new IllegalStateException("Can't deregister interceptors from a integration that is not yet started");
         }
-        LOG.info("Removing MQTT message interceptor. InterceptorId={}", interceptHandler.getID());
         interceptor.removeInterceptHandler(interceptHandler);
     }
     

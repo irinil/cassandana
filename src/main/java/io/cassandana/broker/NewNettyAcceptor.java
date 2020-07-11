@@ -34,8 +34,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import java.util.List;
@@ -75,7 +73,6 @@ class NewNettyAcceptor {
         abstract void init(SocketChannel channel) throws Exception;
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(NewNettyAcceptor.class);
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -90,8 +87,6 @@ class NewNettyAcceptor {
     private Class<? extends ServerSocketChannel> channelClass;
 
     public void initialize(NewNettyMQTTHandler mqttHandler, Config conf, ISslContextCreator sslCtxCreator) {
-        LOG.debug("Initializing Netty acceptor");
-
         nettySoBacklog = conf.socketBacklog;
         nettySoReuseaddr = conf.socketReuseAddress;
         nettyTcpNodelay = conf.tcpNoDelay;
@@ -101,12 +96,10 @@ class NewNettyAcceptor {
 
         boolean epoll = conf.epollEnabled;// props.boolProp(BrokerConstants.NETTY_EPOLL_PROPERTY_NAME, false);
         if (epoll) {
-            LOG.info("Netty is using Epoll");
             bossGroup = new EpollEventLoopGroup();
             workerGroup = new EpollEventLoopGroup();
             channelClass = EpollServerSocketChannel.class;
         } else {
-            LOG.info("Netty is using NIO");
             bossGroup = new NioEventLoopGroup();
             workerGroup = new NioEventLoopGroup();
             channelClass = NioServerSocketChannel.class;
@@ -117,7 +110,6 @@ class NewNettyAcceptor {
         if (securityPortsConfigured(conf)) {
             SslContext sslContext = sslCtxCreator.initSSLContext();
             if (sslContext == null) {
-                LOG.error("Can't initialize SSLHandler layer! Exiting, check your configuration of jks");
                 return;
             }
             initializeSSLTCPTransport(mqttHandler, conf, sslContext);
@@ -130,7 +122,6 @@ class NewNettyAcceptor {
     }
 
     private void initFactory(String host, int port, String protocol, final PipelineInitializer pipelieInitializer) {
-        LOG.debug("Initializing integration. Protocol={}", protocol);
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup).channel(channelClass)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -145,18 +136,14 @@ class NewNettyAcceptor {
                 .childOption(ChannelOption.TCP_NODELAY, nettyTcpNodelay)
                 .childOption(ChannelOption.SO_KEEPALIVE, nettySoKeepalive);
         try {
-            LOG.debug("Binding integration. host={}, port={}", host, port);
             // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(host, port);
-            LOG.info("Server bound to host={}, port={}, protocol={}", host, port, protocol);
             f.sync().addListener(FIRE_EXCEPTION_ON_FAILURE);
         } catch (InterruptedException ex) {
-            LOG.error("An interruptedException was caught while initializing integration. Protocol={}", protocol, ex);
         }
     }
 
     private void initializePlainTCPTransport(NewNettyMQTTHandler handler, Config conf) {
-        LOG.debug("Configuring TCP MQTT transport");
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
         String host = conf.mqttServerHost;
         
@@ -182,7 +169,6 @@ class NewNettyAcceptor {
     }
 
     private void initializeWebSocketTransport(final NewNettyMQTTHandler handler, Config conf) {
-        LOG.debug("Configuring Websocket MQTT transport");
         if(!conf.websocketEnabled) {
         	return;
         }
@@ -209,13 +195,11 @@ class NewNettyAcceptor {
     }
 
     private void initializeSSLTCPTransport(NewNettyMQTTHandler handler, Config conf, SslContext sslContext) {
-        LOG.debug("Configuring SSL MQTT transport");
         if(!conf.sslEnabled) {
         	return;
         }
 
         int sslPort = conf.sslPort;
-        LOG.debug("Starting SSL on port {}", sslPort);
 
         final MoquetteIdleTimeoutHandler timeoutHandler = new MoquetteIdleTimeoutHandler();
         String host = conf.sslHost;
@@ -232,7 +216,6 @@ class NewNettyAcceptor {
     }
 
     private void initializeWSSTransport(NewNettyMQTTHandler handler, Config conf, SslContext sslContext) {
-        LOG.debug("Configuring secure websocket MQTT transport");
         if(!conf.wssEnabled) {
         	return;
         }
@@ -262,9 +245,7 @@ class NewNettyAcceptor {
 
     @SuppressWarnings("FutureReturnValueIgnored")
     public void close() {
-        LOG.debug("Closing Netty acceptor...");
         if (workerGroup == null || bossGroup == null) {
-            LOG.error("Netty acceptor is not initialized");
             throw new IllegalStateException("Invoked close on an Acceptor that wasn't initialized");
         }
         Future<?> workerWaiter = workerGroup.shutdownGracefully();
@@ -274,21 +255,17 @@ class NewNettyAcceptor {
          * We shouldn't raise an IllegalStateException if we are interrupted. If we did so, the
          * broker is not shut down properly.
          */
-        LOG.info("Waiting for worker and boss event loop groups to terminate...");
         try {
             workerWaiter.await(10, TimeUnit.SECONDS);
             bossWaiter.await(10, TimeUnit.SECONDS);
         } catch (InterruptedException iex) {
-            LOG.warn("An InterruptedException was caught while waiting for event loops to terminate...");
         }
 
         if (!workerGroup.isTerminated()) {
-            LOG.warn("Forcing shutdown of worker event loop...");
             workerGroup.shutdownGracefully(0L, 0L, TimeUnit.MILLISECONDS);
         }
 
         if (!bossGroup.isTerminated()) {
-            LOG.warn("Forcing shutdown of boss event loop...");
             bossGroup.shutdownGracefully(0L, 0L, TimeUnit.MILLISECONDS);
         }
     }

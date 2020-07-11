@@ -14,8 +14,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -23,8 +21,6 @@ import static io.netty.channel.ChannelFutureListener.CLOSE_ON_FAILURE;
 
 @Sharable
 public class NewNettyMQTTHandler extends ChannelInboundHandlerAdapter {
-
-    private static final Logger LOG = LoggerFactory.getLogger(NewNettyMQTTHandler.class);
 
     private static final String ATTR_CONNECTION = "connection";
     private static final AttributeKey<Object> ATTR_KEY_CONNECTION = AttributeKey.valueOf(ATTR_CONNECTION);
@@ -54,11 +50,9 @@ public class NewNettyMQTTHandler extends ChannelInboundHandlerAdapter {
             mqttConnection.handleMessage(msg);
         } catch (Throwable ex) {
             //ctx.fireExceptionCaught(ex);
-            LOG.error("Error processing protocol message: {}", msg.fixedHeader().messageType(), ex);
             ctx.channel().close().addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) {
-                    LOG.info("Closed client channel due to exception in processing");
                 }
             });
         } finally {
@@ -80,8 +74,6 @@ public class NewNettyMQTTHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOG.error("Unexpected exception while processing MQTT message. Closing Netty channel. CId={}",
-                  NettyUtils.clientID(ctx.channel()), cause);
         ctx.close().addListener(CLOSE_ON_FAILURE);
     }
 

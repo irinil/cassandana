@@ -12,9 +12,6 @@ package io.cassandana.broker;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.EventExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -59,7 +56,6 @@ public class InflightResender extends ChannelDuplexHandler {
         }
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(InflightResender.class);
     private static final long MIN_TIMEOUT_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
 
     private final long resenderTimeNanos;
@@ -119,9 +115,6 @@ public class InflightResender extends ChannelDuplexHandler {
     private void initialize(ChannelHandlerContext ctx) {
         // Avoid the case where destroy() is called before scheduling timeouts.
         // See: https://github.com/netty/netty/issues/143
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Initializing autoflush handler on channel {}", ctx.channel());
-        }
         switch (state) {
             case 1:
             case 2:
@@ -146,10 +139,6 @@ public class InflightResender extends ChannelDuplexHandler {
     }
 
     private void resendNotAcked(ChannelHandlerContext ctx/* , IdleStateEvent evt */) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Flushing idle Netty channel {} for clientId: {}", ctx.channel(),
-                      NettyUtils.clientID(ctx.channel()));
-        }
         ctx.fireUserEventTriggered(new ResendNotAckedPublishes());
     }
 }

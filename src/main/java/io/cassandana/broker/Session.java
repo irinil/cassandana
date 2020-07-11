@@ -14,8 +14,6 @@ import io.cassandana.broker.subscriptions.Topic;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.mqtt.*;
 import io.netty.util.ReferenceCountUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -27,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 class Session {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Session.class);
     private static final int FLIGHT_BEFORE_RESEND_MS = 5_000;
     private static final int INFLIGHT_WINDOW_SIZE = 10;
 
@@ -212,7 +209,6 @@ class Session {
                 sendPublishQos2(topic, qos, payload);
                 break;
             case FAILURE:
-                LOG.error("Not admissible");
         }
     }
 
@@ -290,7 +286,7 @@ class Session {
     }
 
     private void debugLogPacketIds(Collection<InFlightPacket> expired) {
-        if (!LOG.isDebugEnabled() || expired.isEmpty()) {
+        if (expired.isEmpty()) {
             return;
         }
 
@@ -298,7 +294,6 @@ class Session {
         for (InFlightPacket packet : expired) {
             sb.append(packet.packetId).append(", ");
         }
-        LOG.debug("Resending {} in flight packets [{}]", expired.size(), sb);
     }
 
     private MqttPublishMessage publishNotRetainedDuplicated(InFlightPacket notAckPacketId, Topic topic, MqttQoS qos,
@@ -333,7 +328,6 @@ class Session {
     }
 
     public void sendQueuedMessagesWhileOffline() {
-        LOG.trace("Republishing all saved messages for session {} on CId={}", this, this.clientId);
         drainQueueToConnection();
     }
 

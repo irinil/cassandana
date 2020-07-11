@@ -15,12 +15,9 @@ import io.cassandana.broker.subscriptions.ISubscriptionsDirectory;
 import io.cassandana.broker.subscriptions.Subscription;
 import io.cassandana.broker.subscriptions.Topic;
 import io.cassandana.interception.BrokerInterceptor;
-import io.cassandana.silo.Silo;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +30,7 @@ import static io.netty.handler.codec.mqtt.MqttQoS.*;
 
 class PostOffice {
 
-	private Silo silo;
 	
-    private static final Logger LOG = LoggerFactory.getLogger(PostOffice.class);
 
     private final Authorizator authorizator;
     private final ISubscriptionsDirectory subscriptions;
@@ -44,13 +39,12 @@ class PostOffice {
     private BrokerInterceptor interceptor;
 
     PostOffice(ISubscriptionsDirectory subscriptions, IAuthorizatorPolicy authorizatorPolicy,
-               IRetainedRepository retainedRepository, SessionRegistry sessionRegistry, BrokerInterceptor interceptor, Silo silo) {
+               IRetainedRepository retainedRepository, SessionRegistry sessionRegistry, BrokerInterceptor interceptor) {
         this.authorizator = new Authorizator(authorizatorPolicy);
         this.subscriptions = subscriptions;
         this.retainedRepository = retainedRepository;
         this.sessionRegistry = sessionRegistry;
         this.interceptor = interceptor;
-        this.silo = silo;
     }
 
     public void init(SessionRegistry sessionRegistry) {
@@ -140,12 +134,10 @@ class PostOffice {
             if (!validTopic) {
                 // close the connection, not valid topicFilter is a protocol violation
                 mqttConnection.dropConnection();
-                LOG.warn("Topic filter is not valid. CId={}, topics: {}, offending topic filter: {}", clientID,
-                         topics, topic);
+  
                 return;
             }
 
-            LOG.trace("Removing subscription. CId={}, topic={}", clientID, topic);
             subscriptions.removeSubscription(topic, clientID);
 
             // TODO remove the subscriptions to Session
@@ -162,12 +154,9 @@ class PostOffice {
     void receivedPublishQos0(Topic topic, String username, String clientID, ByteBuf payload, boolean retain,
                              MqttPublishMessage msg) {
         if (!authorizator.canWrite(topic, username, clientID)) {
-            LOG.error("MQTT client: {} is not authorized to publish on topic: {}", clientID, topic);
             return;
         }
         
-        if(silo != null)
-        	silo.put(topic, username, payload, AT_MOST_ONCE);
         
         publish2Subscribers(payload, topic, AT_MOST_ONCE);
 
@@ -184,18 +173,14 @@ class PostOffice {
         // verify if topic can be write
         topic.getTokens();
         if (!topic.isValid()) {
-            LOG.warn("Invalid topic format, force close the connection");
             connection.dropConnection();
             return;
         }
         final String clientId = connection.getClientId();
         if (!authorizator.canWrite(topic, username, clientId)) {
-            LOG.error("MQTT client: {} is not authorized to publish on topic: {}", clientId, topic);
             return;
         }
 
-        if(silo != null)
-        	silo.put(topic, username, payload, AT_LEAST_ONCE);
         
         publish2Subscribers(payload, topic, AT_LEAST_ONCE);
 
@@ -221,10 +206,7 @@ class PostOffice {
 
             boolean isSessionPresent = targetSession != null;
             if (isSessionPresent) {
-                LOG.debug("Sending PUBLISH message to active subscriber CId: {}, topicFilter: {}, qos: {}",
-                          sub.getClientId(), sub.getTopicFilter(), qos);
                 if (!authorizator.canRead(topic, sub.getUsername(), sub.getClientId())) {
-                    LOG.debug("Authorizator prohibit Client {} to be notified on {}", sub.getClientId(), topic);
                     return;
                 }
 
@@ -234,8 +216,6 @@ class PostOffice {
             } else {
                 // If we are, the subscriber disconnected after the subscriptions tree selected that session as a
                 // destination.
-                LOG.debug("PUBLISH to not yet present session. CId: {}, topicFilter: {}, qos: {}", sub.getClientId(),
-                          sub.getTopicFilter(), qos);
             }
         }
     }
@@ -245,18 +225,14 @@ class PostOffice {
      * subscribers.
      */
     void receivedPublishQos2(MQTTConnection connection, MqttPublishMessage mqttPublishMessage, String username) {
-        LOG.trace("Processing PUBREL message on connection: {}", connection);
         final Topic topic = new Topic(mqttPublishMessage.variableHeader().topicName());
         final ByteBuf payload = mqttPublishMessage.payload();
 
         final String clientId = connection.getClientId();
         if (!authorizator.canWrite(topic, username, clientId)) {
-            LOG.error("MQTT client is not authorized to publish on topic. CId={}, topic: {}", clientId, topic);
             return;
         }
         
-        if(silo != null)        	
-        	silo.put(topic, username, payload, EXACTLY_ONCE);
 
         publish2Subscribers(payload, topic, EXACTLY_ONCE);
 
@@ -295,7 +271,6 @@ class PostOffice {
         final MqttQoS qos = msg.fixedHeader().qosLevel();
         final Topic topic = new Topic(msg.variableHeader().topicName());
         final ByteBuf payload = msg.payload();
-        LOG.info("Sending internal PUBLISH message Topic={}, qos={}", topic, qos);
 
         publish2Subscribers(payload, topic, qos);
 

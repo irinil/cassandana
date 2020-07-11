@@ -31,16 +31,12 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Cassandana integration implementation to load SSL certificate from local filesystem path configured in
  * config file.
  */
 class DefaultCassandanaSslContextCreator implements ISslContextCreator {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultCassandanaSslContextCreator.class);
 
     private final Config conf;
 
@@ -51,11 +47,8 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
 
     @Override
     public SslContext initSSLContext() {
-        LOG.info("Checking SSL configuration properties...");
-
         final String keyPassword = conf.certKeyManagerPassword;// props.getProperty(BrokerConstants.KEY_MANAGER_PASSWORD_PROPERTY_NAME);
         if (keyPassword == null || keyPassword.isEmpty()) {
-            LOG.warn("The key manager password is null or empty. The SSL context won't be initialized.");
             return null;
         }
 
@@ -72,7 +65,6 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
                 contextBuilder = builderWithOpenSSLProvider(ks, keyPassword);
                 break;
             default:
-                LOG.error("unsupported SSL provider {}", sslProvider);
                 return null;
             }
             // if client authentification is enabled a trustmanager needs to be added to the ServerContext
@@ -86,29 +78,23 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
             
             contextBuilder.sslProvider(sslProvider);
             SslContext sslContext = contextBuilder.build();
-            LOG.info("The SSL context has been initialized successfully.");
             return sslContext;
         } catch (GeneralSecurityException | IOException ex) {
-            LOG.error("Unable to initialize SSL context.", ex);
             return null;
         }
     }
 
     private KeyStore loadKeyStore() throws IOException, GeneralSecurityException {
         final String jksPath = conf.certPath;// props.getProperty(BrokerConstants.JKS_PATH_PROPERTY_NAME);
-        LOG.info("Initializing SSL context. KeystorePath = {}.", jksPath);
         if (jksPath == null || jksPath.isEmpty()) {
-            LOG.warn("The keystore path is null or empty. The SSL context won't be initialized.");
             return null;
         }
         final String keyStorePassword = conf.certKeyStorePassword;//  props.getProperty(BrokerConstants.KEY_STORE_PASSWORD_PROPERTY_NAME);
         if (keyStorePassword == null || keyStorePassword.isEmpty()) {
-            LOG.warn("The keystore password is null or empty. The SSL context won't be initialized.");
             return null;
         }
         String ksType = conf.certKeyStoreType;// props.getProperty(BrokerConstants.KEY_STORE_TYPE, "jks");
         final KeyStore keyStore = KeyStore.getInstance(ksType);
-        LOG.info("Loading keystore. KeystorePath = {}.", jksPath);
         try (InputStream jksInputStream = jksDatastore(jksPath)) {
             keyStore.load(jksInputStream, keyStorePassword.toCharArray());
         }
@@ -117,10 +103,8 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
 
     private static SslContextBuilder builderWithJdkProvider(KeyStore ks, String keyPassword)
             throws GeneralSecurityException {
-        LOG.info("Initializing key manager...");
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, keyPassword.toCharArray());
-        LOG.info("Initializing SSL context...");
         return SslContextBuilder.forServer(kmf);
     }
 
@@ -146,7 +130,6 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
 
     private static void addClientAuthentication(KeyStore ks, SslContextBuilder contextBuilder)
             throws NoSuchAlgorithmException, KeyStoreException {
-        LOG.warn("Client authentication is enabled. The keystore will be used as a truststore.");
         // use keystore as truststore, as integration needs to trust certificates signed by the integration certificates
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ks);
@@ -159,7 +142,6 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
         try {
             return SslProvider.valueOf(providerName);
         } catch (IllegalArgumentException e) {
-            LOG.warn("unknown SSL Provider {}, falling back on JDK provider", providerName);
             return SslProvider.JDK;
         }
     }
@@ -167,13 +149,10 @@ class DefaultCassandanaSslContextCreator implements ISslContextCreator {
     private InputStream jksDatastore(String jksPath) throws FileNotFoundException {
         URL jksUrl = getClass().getClassLoader().getResource(jksPath);
         if (jksUrl != null) {
-            LOG.info("Starting with jks at {}, jks normal {}", jksUrl.toExternalForm(), jksUrl);
             return getClass().getClassLoader().getResourceAsStream(jksPath);
         }
-        LOG.warn("No keystore has been found in the bundled resources. Scanning filesystem...");
         File jksFile = new File(jksPath);
         if (jksFile.exists()) {
-            LOG.info("Loading external keystore. Url = {}.", jksFile.getAbsolutePath());
             return new FileInputStream(jksFile);
         }
         throw new FileNotFoundException("The keystore file does not exist. Url = " + jksFile.getAbsolutePath());

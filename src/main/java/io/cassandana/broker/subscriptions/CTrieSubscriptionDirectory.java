@@ -9,39 +9,26 @@
  */
 package io.cassandana.broker.subscriptions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.cassandana.broker.ISubscriptionsRepository;
 
 import java.util.*;
 
 public class CTrieSubscriptionDirectory implements ISubscriptionsDirectory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CTrieSubscriptionDirectory.class);
-
     private CTrie ctrie;
     private volatile ISubscriptionsRepository subscriptionsRepository;
 
     @Override
     public void init(ISubscriptionsRepository subscriptionsRepository) {
-        LOG.info("Initializing CTrie");
         ctrie = new CTrie();
 
-        LOG.info("Initializing subscriptions store...");
         this.subscriptionsRepository = subscriptionsRepository;
         // reload any subscriptions persisted
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Reloading all stored subscriptions. SubscriptionTree = {}", dumpTree());
-        }
 
         for (Subscription subscription : this.subscriptionsRepository.listAllSubscriptions()) {
-            LOG.debug("Re-subscribing {}", subscription);
             ctrie.addToTree(subscription);
         }
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Stored subscriptions have been reloaded. SubscriptionTree = {}", dumpTree());
-        }
+
     }
 
     Optional<CNode> lookup(Topic topic) {

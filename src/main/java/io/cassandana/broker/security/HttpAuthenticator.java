@@ -17,17 +17,13 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cassandana.Constants;
 import io.cassandana.broker.Utils;
 import io.cassandana.broker.config.Config;
 import io.cassandana.broker.security.cache.AuthenticationCache;
 
-public class HttpAuthenticator implements IAuthenticator {
-	private static final Logger LOG = LoggerFactory.getLogger(HttpAuthenticator.class);
-	
+public class HttpAuthenticator implements IAuthenticator {	
 	private AuthenticationCache cache;
 	
 	private Config conf;
@@ -77,7 +73,6 @@ public class HttpAuthenticator implements IAuthenticator {
     	    
     	} catch (Exception e) {
     		e.printStackTrace();
-    		LOG.error("HTTP Authentication error: ", e.getMessage());
     		
 		} finally {
 			if(connection != null)

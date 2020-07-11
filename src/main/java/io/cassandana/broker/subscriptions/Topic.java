@@ -18,12 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class Topic implements Serializable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Topic.class);
 
     private static final long serialVersionUID = 2438799283749822L;
 
@@ -61,7 +56,6 @@ public class Topic implements Serializable {
                 valid = true;
             } catch (ParseException e) {
                 valid = false;
-                LOG.error("Error parsing the topic: {}, message: {}", topic, e.getMessage());
             }
         }
 

@@ -19,7 +19,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import io.cassandana.Constants;
 import io.cassandana.broker.security.SecurityProvider;
-import io.cassandana.database.DatabaseEngine;
 
 public class Config {
 
@@ -32,6 +31,134 @@ public class Config {
 			instance = new Config();
 		return instance;
 	}
+	
+	
+//public Config() {
+//    
+//}
+	
+
+public Config(int threads, String mqttServerHost, int mqttServerPort, String dbHost, int dbPort, String dbUsername,
+            String dbPassword, String dbName, boolean allowAnonymous, boolean allowZeroByteClientId,
+            String websocketHost, int websocketPort, boolean websocketEnabled, String httpHost, int httpPort,
+            boolean httpEnabled, boolean reauthorizeSubscriptionsOnConnect, int maxMessageBytes,
+            boolean socketReuseAddress, boolean tcpNoDelay, boolean socketKeepAlive, int socketBacklog,
+            int socketTimeoutSeconds, boolean epollEnabled, String httpsHost, int httpsPort, boolean httpsEnabled,
+            String sslHost, int sslPort, boolean sslEnabled, String wssHost, int wssPort, boolean wssEnabled,
+            String certProvider, String certKeyManagerPassword, String certKeyStoreType, String certPath,
+            boolean certClientAuth, String certKeyStorePassword, SecurityProvider authProvider,
+            SecurityProvider aclProvider, String authenticationHttpUrl, String authorizationHttpUrl,
+            int siloIntervalSeconds, int siloBulkCount, boolean siloEnabled, boolean redisEnabled, String redisHost,
+            int redisPort, String redisPassword, int cacheTtl, boolean cacheEnabled, int cacheExpirationInSeconds) {
+        super();
+        this.threads = threads;
+        this.mqttServerHost = mqttServerHost;
+        this.mqttServerPort = mqttServerPort;
+        this.dbHost = dbHost;
+        this.dbPort = dbPort;
+        this.dbUsername = dbUsername;
+        this.dbPassword = dbPassword;
+        this.dbName = dbName;
+        this.allowAnonymous = allowAnonymous;
+        this.allowZeroByteClientId = allowZeroByteClientId;
+        this.websocketHost = websocketHost;
+        this.websocketPort = websocketPort;
+        this.websocketEnabled = websocketEnabled;
+        this.httpHost = httpHost;
+        this.httpPort = httpPort;
+        this.httpEnabled = httpEnabled;
+        this.reauthorizeSubscriptionsOnConnect = reauthorizeSubscriptionsOnConnect;
+        this.maxMessageBytes = maxMessageBytes;
+        this.socketReuseAddress = socketReuseAddress;
+        this.tcpNoDelay = tcpNoDelay;
+        this.socketKeepAlive = socketKeepAlive;
+        this.socketBacklog = socketBacklog;
+        this.socketTimeoutSeconds = socketTimeoutSeconds;
+        this.epollEnabled = epollEnabled;
+        this.httpsHost = httpsHost;
+        this.httpsPort = httpsPort;
+        this.httpsEnabled = httpsEnabled;
+        this.sslHost = sslHost;
+        this.sslPort = sslPort;
+        this.sslEnabled = sslEnabled;
+        this.wssHost = wssHost;
+        this.wssPort = wssPort;
+        this.wssEnabled = wssEnabled;
+        this.certProvider = certProvider;
+        this.certKeyManagerPassword = certKeyManagerPassword;
+        this.certKeyStoreType = certKeyStoreType;
+        this.certPath = certPath;
+        this.certClientAuth = certClientAuth;
+        this.certKeyStorePassword = certKeyStorePassword;
+        this.authProvider = authProvider;
+        this.aclProvider = aclProvider;
+        this.authenticationHttpUrl = authenticationHttpUrl;
+        this.authorizationHttpUrl = authorizationHttpUrl;
+        this.siloIntervalSeconds = siloIntervalSeconds;
+        this.siloBulkCount = siloBulkCount;
+        this.siloEnabled = siloEnabled;
+        this.redisEnabled = redisEnabled;
+        this.redisHost = redisHost;
+        this.redisPort = redisPort;
+        this.redisPassword = redisPassword;
+        this.cacheTtl = cacheTtl;
+        this.cacheEnabled = cacheEnabled;
+        this.cacheExpirationInSeconds = cacheExpirationInSeconds;
+    }
+
+public Config(int threads, String mqttServerHost, int mqttServerPort, boolean allowAnonymous, boolean allowZeroByteClientId, String websocketHost, int websocketPort, boolean websocketEnabled, String httpHost, int httpPort, boolean httpEnabled, boolean reauthorizeSubscriptionsOnConnect, int maxMessageBytes, boolean socketReuseAddress, boolean tcpNoDelay, boolean socketKeepAlive, int socketBacklog, int socketTimeoutSeconds, boolean epollEnabled, String httpsHost, int httpsPort, boolean httpsEnabled, String sslHost, int sslPort, boolean sslEnabled, String wssHost, int wssPort, boolean wssEnabled, String certProvider, String certKeyManagerPassword, String certKeyStoreType, String certPath, boolean certClientAuth, String certKeyStorePassword, SecurityProvider authProvider, SecurityProvider aclProvider, String authenticationHttpUrl, String authorizationHttpUrl, int cacheTtl, boolean cacheEnabled, int cacheExpirationInSeconds) {
+    this.threads = threads;
+    this.mqttServerHost = mqttServerHost;
+    this.mqttServerPort = mqttServerPort;
+    this.allowAnonymous = allowAnonymous;
+    this.allowZeroByteClientId = allowZeroByteClientId;
+    this.websocketHost = websocketHost;
+    this.websocketPort = websocketPort;
+    this.websocketEnabled = websocketEnabled;
+    this.httpHost = httpHost;
+    this.httpPort = httpPort;
+    this.httpEnabled = httpEnabled;
+    this.reauthorizeSubscriptionsOnConnect = reauthorizeSubscriptionsOnConnect;
+    this.maxMessageBytes = maxMessageBytes;
+    this.socketReuseAddress = socketReuseAddress;
+    this.tcpNoDelay = tcpNoDelay;
+    this.socketKeepAlive = socketKeepAlive;
+    this.socketBacklog = socketBacklog;
+    this.socketTimeoutSeconds = socketTimeoutSeconds;
+    this.epollEnabled = epollEnabled;
+    this.httpsHost = httpsHost;
+    this.httpsPort = httpsPort;
+    this.httpsEnabled = httpsEnabled;
+    this.sslHost = sslHost;
+    this.sslPort = sslPort;
+    this.sslEnabled = sslEnabled;
+    this.wssHost = wssHost;
+    this.wssPort = wssPort;
+    this.wssEnabled = wssEnabled;
+    this.certProvider = certProvider;
+    this.certKeyManagerPassword = certKeyManagerPassword;
+    this.certKeyStoreType = certKeyStoreType;
+    this.certPath = certPath;
+    this.certClientAuth = certClientAuth;
+    this.certKeyStorePassword = certKeyStorePassword;
+    this.authProvider = authProvider;
+    this.aclProvider = aclProvider;
+    this.authenticationHttpUrl = authenticationHttpUrl;
+    this.authorizationHttpUrl = authorizationHttpUrl;
+    this.cacheTtl = cacheTtl;
+    this.cacheEnabled = cacheEnabled;
+    this.cacheExpirationInSeconds = cacheExpirationInSeconds;
+}
+
+
+
+public Config(String mqttServerHost, int mqttServerPort) {
+    super();
+    this.mqttServerHost = mqttServerHost;
+    this.mqttServerPort = mqttServerPort;
+}
+
+
 
 	private Config() throws Exception {
 		if (!parse())
@@ -137,18 +264,6 @@ public class Config {
 
 				dbPort = (int) database.get(Constants.PORT);
 				if (dbPort <= 0 || dbPort >= 65535)
-					return false;
-
-				String engine = database.get(Constants.ENGINE).toString();
-				if (engine.equalsIgnoreCase(Constants.MYSQL))
-					dbEngine = DatabaseEngine.MYSQL;
-				else if (engine.equalsIgnoreCase(Constants.POSTGRES))
-					dbEngine = DatabaseEngine.POSTGRES;
-				else if (engine.equalsIgnoreCase(Constants.MONGODB))
-					dbEngine = DatabaseEngine.MONGODB;
-				else if (engine.equalsIgnoreCase(Constants.CASSANDRA))
-					dbEngine = DatabaseEngine.CASSANDRA;
-				else
 					return false;
 
 			} else {
@@ -450,8 +565,6 @@ public class Config {
 	public String dbUsername;
 	public String dbPassword;
 	public String dbName;
-
-	public DatabaseEngine dbEngine = DatabaseEngine.UNKNOWN;
 
 	public boolean allowAnonymous = true;
 	public boolean allowZeroByteClientId = false;

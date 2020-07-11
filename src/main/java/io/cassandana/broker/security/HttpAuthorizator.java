@@ -14,8 +14,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cassandana.Constants;
 import io.cassandana.broker.config.Config;
@@ -25,7 +23,6 @@ import io.cassandana.broker.subscriptions.Topic;
 
 public class HttpAuthorizator implements IAuthorizatorPolicy {
 	
-private static final Logger LOG = LoggerFactory.getLogger(HttpAuthorizator.class);
 	
 
 	private AuthorizationCache cache;
@@ -90,7 +87,6 @@ private static final Logger LOG = LoggerFactory.getLogger(HttpAuthorizator.class
     	    
     	} catch (Exception e) {
     		e.printStackTrace();
-    		LOG.error("HTTP Authorization error: ", e.getMessage());
     		
 		} finally {
 			if(connection != null)
